@@ -2,6 +2,8 @@
 
 const jwt = require('jsonwebtoken');
 
+const { NODE_ENV, JWT_SECRET } = process.env;
+
 module.exports = (req, res, next) => {
   const { authorization } = req.headers;
 
@@ -12,9 +14,10 @@ module.exports = (req, res, next) => {
   }
 
   const token = authorization.replace('Bearer ', '');
+
   let payload;
   try {
-    payload = jwt.verify(token, 'some-secret-key');
+    payload = jwt.verify(token, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret');
   } catch (err) {
     return res
       .status(401)
@@ -22,6 +25,6 @@ module.exports = (req, res, next) => {
   }
 
   req.user = payload; // записываем пейлоуд в объект запроса
-
+  console.log('final ', payload);
   next(); // пропускаем запрос дальше
 };
