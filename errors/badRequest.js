@@ -1,7 +1,9 @@
+const { HTTP_RES_CODES } = require('../utils/constants');
+
 class BadRequest extends Error {
   constructor(message) {
     super(message);
-    this.type = 400;
+    this.type = HTTP_RES_CODES.badRequest;
   }
 }
 

@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
 const isEmail = require('validator/lib/isEmail');
 const bcrypt = require('bcryptjs');
-const BadRequestError = require('../errors/badRequest');
+const UnauthorizedError = require('../errors/unauthorized');
 
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
+    required: true,
     minlength: 2,
     maxlength: 30,
   },
@@ -30,13 +31,13 @@ userSchema.statics.findUserByCredentials = function check(email, password) {
     .select('+password')
     .then((user) => {
       if (!user) {
-        return Promise.reject(new BadRequestError('Invalid request'));
+        return Promise.reject(new UnauthorizedError('Invalid request'));
       }
 
       return bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            return Promise.reject(new BadRequestError('Invalid request'));
+            return Promise.reject(new UnauthorizedError('Invalid request'));
           }
 
           return user;

@@ -58,9 +58,9 @@ exports.patchUserValidation = celebrate({
 
 exports.MovieIdValidation = celebrate({
   params: Joi.object().keys({
-    movieId: Joi.number().required()
+    _id: Joi.string().length(24).hex().required()
       .messages({
-        'any.required': 'Поле "movieId" должно быть заполнено',
+        'any.required': 'Поле "_id" должно быть заполнено',
       }),
   }),
 });
@@ -93,7 +93,7 @@ exports.createMovieValidation = celebrate({
       }
       return helpers.message('Невалидная ссылка для поля "image"');
     }),
-    trailer: Joi.string().required().custom((value, helpers) => {
+    trailerLink: Joi.string().required().custom((value, helpers) => {
       if (validator.isURL(value)) {
         return value;
       }

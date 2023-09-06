@@ -4,7 +4,7 @@ const User = require('../models/user');
 const NotFoundError = require('../errors/notFound');
 const ConflictError = require('../errors/conflict');
 const BadRequestError = require('../errors/badRequest');
-const { SALT_PASSWORD_LEN, TOKEN_EXPIRES } = require('../utils/constants');
+const { SALT_PASSWORD_LEN, TOKEN_EXPIRES, HTTP_RES_CODES } = require('../utils/constants');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
@@ -13,7 +13,7 @@ module.exports.createUser = (req, res, next) => {
   User.findOne({ email })
     .then((findUser) => {
       if (findUser) {
-        throw new ConflictError('Ivalid data');
+        throw new ConflictError('User with the same email already exists');
       }
       return bcrypt.hash(password, SALT_PASSWORD_LEN);
     }).then((hash) => User.create({
@@ -21,7 +21,14 @@ module.exports.createUser = (req, res, next) => {
       email,
       password: hash,
     }))
-    .then((user) => res.status(201).send({ data: user }))
+    .then((user) => {
+      const resp = {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+      };
+      res.status(HTTP_RES_CODES.created).send({ data: resp });
+    })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Invalid token'));
@@ -41,11 +48,11 @@ exports.patchUserMe = async (req, res, next) => {
     const userSpec = await User.findById(ownerId);
     const emailCur = userSpec.email;
     if (findUser && emailCur !== email) {
-      throw new ConflictError('Ivalid data');
+      throw new ConflictError('User with the same email already exists');
     }
     const userPatchMe = await User.findByIdAndUpdate(ownerId, { name, email }, options);
     if (userPatchMe) {
-      res.status(200).send({ data: userPatchMe });
+      res.status(HTTP_RES_CODES.success).send({ data: userPatchMe });
     } else {
       throw new BadRequestError('Invalid request');
     }
@@ -59,7 +66,7 @@ exports.getUser = async (req, res, next) => {
   try {
     const userSpec = await User.findById(ownerId);
     if (userSpec) {
-      res.status(200).send({ data: userSpec });
+      res.status(HTTP_RES_CODES.success).send({ data: userSpec });
     } else {
       throw new NotFoundError(`User ${ownerId} not founded`);
     }

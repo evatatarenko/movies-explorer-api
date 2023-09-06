@@ -15,6 +15,18 @@ describe('Base logic test', () => {
       });
   });
 
+  it('test signup with wrong validation', (done) => {
+    const response = request
+      .post('/signup')
+      .send({ name: 'testname', email: 'teste', password: 'Te' })
+      .set('Accept', 'application/json')
+      .end(function (err, res) {
+        console.log('test signup: ', res.body);
+        if (err) return done(err);
+        done();
+      });
+  });
+
   it('test login', (done) => {
     const response = request
       .post('/signin')
@@ -123,11 +135,11 @@ describe('GET /movies/', function () {
                 year: 2023,
                 description: 'Testdescription',
                 image: 'https://practicum.yandex.ru',
-                trailer: 'https://practicum.yandex.ru',
+                trailerLink: 'https://practicum.yandex.ru',
                 nameRU: 'TestnameRU',
                 nameEN: 'TestnameEN',
                 thumbnail: 'https://practicum.yandex.ru',
-                movieId: '100'})
+                movieId: 101})
         .set('Authorization', 'Bearer ' + token)
         .set('Accept', 'application/json')
         .expect(201)
@@ -138,9 +150,22 @@ describe('GET /movies/', function () {
         });
     });
 
+    var idForDelete = null;
+
+    before(function (done) {
+      request
+        .get('/movies')
+        .set('Authorization', 'Bearer ' + token)
+        .end(function (err, res) {
+          idForDelete = res.body[0]._id;
+          if (err) return done(err);
+          done();
+        });
+    })
+
     it('delete /movies', function (done) {
       request
-        .delete('/movies/100')
+        .delete(`/movies/${idForDelete}`)
         .set('Authorization', 'Bearer ' + token)
         .expect(200)
         .expect('Content-Type', /json/)
