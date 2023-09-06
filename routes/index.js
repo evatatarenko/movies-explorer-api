@@ -12,7 +12,7 @@ const {
 } = require('../middlewares/validation');
 
 const { userRoutes } = require('./user');
-// const { moviesRoutes } = require('./movie');
+const { moviesRoutes } = require('./movie');
 
 const routes = express.Router();
 
@@ -25,10 +25,10 @@ routes.post('/signin', express.json(), signInValidation, login);
 routes.use(auth);
 
 routes.use('/users', userRoutes);
+routes.use('/movies', moviesRoutes);
 
 routes.use('/', (req, res, next) => {
   next(new Error('Страница по указанному маршруту не найдена'));
 });
 
 exports.routes = routes;
-

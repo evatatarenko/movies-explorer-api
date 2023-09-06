@@ -21,6 +21,30 @@ module.exports.createUser = async (req, res) => {
   }
 };
 
+exports.patchUserMe = async (req, res) => {
+  const options = { new: true, runValidators: true };
+  const ownerId = req.user._id;
+
+  try {
+    const { name, email } = req.body;
+    const findUser = await User.findOne({ email });
+    const userSpec = await User.findById(ownerId);
+    const emailCur = userSpec.email;
+    if (findUser && emailCur !== email) {
+      res.status(409).send({ message: 'ivalid data' });
+    } else {
+      const userPatchMe = await User.findByIdAndUpdate(ownerId, { name, email }, options);
+      if (userPatchMe) {
+        res.status(200).send({ data: userPatchMe });
+      } else {
+        res.status(400).send({ message: 'invalid request' });
+      }
+    }
+  } catch (err) {
+    res.status(400).send({ message: `invalid request: ${err}` });
+  }
+};
+
 exports.getUser = async (req, res) => {
   const ownerId = req.user._id;
   try {
@@ -28,7 +52,9 @@ exports.getUser = async (req, res) => {
     if (userSpec) {
       res.status(200).send({ data: userSpec });
     } else {
-      throw new Error(`Пользователь по указанному ${ownerId} не найден`);
+      res
+        .status(400)
+        .send({ message: `User ${ownerId} not founded` });
     }
   } catch (err) {
     res
