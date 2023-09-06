@@ -30,7 +30,7 @@ describe('Base logic test', () => {
 });
 
 describe('GET /users/', function () {
-  it('should require authorization', function (done) {
+  it('get /users/me', function (done) {
     request
       .get('/users/me')
       .expect(401)

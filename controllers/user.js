@@ -1,27 +1,32 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const NotFoundError = require('../errors/notFound');
+const ConflictError = require('../errors/conflict');
+const BadRequestError = require('../errors/badRequest');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
-module.exports.createUser = async (req, res) => {
+const saltPasswordLen = 10;
+
+module.exports.createUser = (req, res, next) => {
   const { name, email, password } = req.body;
-  const findUser = await User.findOne({ email });
-  if (findUser) {
-    res.status(409).send();
-  } else {
-    bcrypt.hash(password, 10)
-      .then((hash) => User.create({
-        name,
-        email,
-        password: hash,
-      }))
-      .then((user) => res.status(201).send({ data: user }))
-      .catch((err) => res.status(500).send({ err }));
-  }
+  User.findOne({ email })
+    .then((findUser) => {
+      if (findUser) {
+        throw new ConflictError('Ivalid data');
+      }
+      return bcrypt.hash(password, saltPasswordLen);
+    }).then((hash) => User.create({
+      name,
+      email,
+      password: hash,
+    }))
+    .then((user) => res.status(201).send({ data: user }))
+    .catch(next);
 };
 
-exports.patchUserMe = async (req, res) => {
+exports.patchUserMe = async (req, res, next) => {
   const options = { new: true, runValidators: true };
   const ownerId = req.user._id;
 
@@ -31,39 +36,34 @@ exports.patchUserMe = async (req, res) => {
     const userSpec = await User.findById(ownerId);
     const emailCur = userSpec.email;
     if (findUser && emailCur !== email) {
-      res.status(409).send({ message: 'ivalid data' });
+      throw new ConflictError('Ivalid data');
+    }
+    const userPatchMe = await User.findByIdAndUpdate(ownerId, { name, email }, options);
+    if (userPatchMe) {
+      res.status(200).send({ data: userPatchMe });
     } else {
-      const userPatchMe = await User.findByIdAndUpdate(ownerId, { name, email }, options);
-      if (userPatchMe) {
-        res.status(200).send({ data: userPatchMe });
-      } else {
-        res.status(400).send({ message: 'invalid request' });
-      }
+      throw new BadRequestError('Invalid request');
     }
   } catch (err) {
-    res.status(400).send({ message: `invalid request: ${err}` });
+    next(err);
   }
 };
 
-exports.getUser = async (req, res) => {
+exports.getUser = async (req, res, next) => {
   const ownerId = req.user._id;
   try {
     const userSpec = await User.findById(ownerId);
     if (userSpec) {
       res.status(200).send({ data: userSpec });
     } else {
-      res
-        .status(400)
-        .send({ message: `User ${ownerId} not founded` });
+      throw new NotFoundError(`User ${ownerId} not founded`);
     }
   } catch (err) {
-    res
-      .status(401)
-      .send({ message: err.message });
+    next(err);
   }
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
@@ -74,10 +74,5 @@ module.exports.login = (req, res) => {
       );
       res.send({ token });
     })
-    .catch((err) => {
-      // ошибка аутентификации
-      res
-        .status(401)
-        .send({ message: err.message });
-    });
+    .catch(next);
 };

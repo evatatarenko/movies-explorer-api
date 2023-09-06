@@ -1,4 +1,7 @@
 const Movie = require('../models/movie');
+const NotFoundError = require('../errors/notFound');
+const ConflictError = require('../errors/conflict');
+const BadRequestError = require('../errors/badRequest');
 
 exports.getMovies = async (req, res, next) => {
   try {
@@ -14,7 +17,7 @@ exports.deleteMovieById = async (req, res, next) => {
   try {
     const userMovie = await Movie.findOne({ movieId: req.params.movieId });
     if (!userMovie.owner.equals(ownerId)) {
-      return next(new Error('This film is not yours'));
+      throw new NotFoundError('This film does not exist');
     }
     await Movie.deleteOne({ _id: userMovie._id });
     res.status(200).send(userMovie);
@@ -41,7 +44,7 @@ exports.createMovie = async (req, res, next) => {
     const ownerId = req.user._id;
     const findMovie = await Movie.findOne({ movieId });
     if (findMovie) {
-      next(new Error('Ivalid movieId'));
+      next(new ConflictError('Ivalid movieId'));
     }
     const movieNew = await Movie.create({
       country,
@@ -60,7 +63,7 @@ exports.createMovie = async (req, res, next) => {
     res.status(201).send({ data: movieNew });
   } catch (err) {
     if (err.name === 'ValidationError') {
-      next(new Error('Invalid request'));
+      next(new BadRequestError('Invalid request'));
     } else {
       next(err);
     }
