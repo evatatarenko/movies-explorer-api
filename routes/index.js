@@ -1,4 +1,5 @@
 const express = require('express');
+const NotFoundError = require('../errors/notFound');
 
 const {
   login,
@@ -28,7 +29,7 @@ routes.use('/users', userRoutes);
 routes.use('/movies', moviesRoutes);
 
 routes.use('/', (req, res, next) => {
-  next(new Error('Страница по указанному маршруту не найдена'));
+  next(new NotFoundError('Страница по указанному маршруту не найдена'));
 });
 
 exports.routes = routes;
