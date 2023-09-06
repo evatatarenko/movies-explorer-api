@@ -22,7 +22,13 @@ module.exports.createUser = (req, res, next) => {
       password: hash,
     }))
     .then((user) => res.status(201).send({ data: user }))
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Invalid token'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 exports.patchUserMe = async (req, res, next) => {
