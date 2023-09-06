@@ -2,8 +2,8 @@
 # backend API дипломного проекта movies-explorer Яндекс.Практикум
 
 ## Ссылки:
-Публичный IP-адрес сервера - 158.160.63.45
-Домен сервера - api.tatarenko-diploma.nomoredomainsicu.ru
+Публичный IP-адрес сервера - 158.160.109.76
+Домен сервера - [api.tatarenko-diploma.nomoredomainsicu.ru](https://api.tatarenko-diploma.nomoredomainsicu.ru/)
 
 ### Технологии:
 + NodeJS
