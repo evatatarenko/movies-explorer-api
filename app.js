@@ -1,35 +1,28 @@
+require('dotenv').config();
 const express = require('express');
+const helmet = require('helmet');
 const mongoose = require('mongoose');
 const { errors } = require('celebrate');
-
+const limiter = require('./middlewares/rateLimit');
+const errorProcesser = require('./middlewares/errorProcessing');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
-
+const { MONGO_URL_DEV } = require('./utils/constants');
 const { routes } = require('./routes');
 
-const { PORT = 3000 } = process.env;
+const { PORT = 3000, NODE_ENV, MONGO_URL } = process.env;
 const app = express();
 
-mongoose.connect('mongodb://localhost:27017/bitfilmsdb');
+mongoose.connect(NODE_ENV === 'production' ? MONGO_URL : MONGO_URL_DEV);
 
 app.use(requestLogger);
+if (NODE_ENV === 'production') {
+  app.use(helmet());
+  app.use(limiter);
+}
 app.use(routes);
 app.use(errorLogger);
 app.use(errors());
-
-// Central error handler
-app.use((err, req, res, next) => {
-  // Internal Errors by default
-  const { type = 500, message } = err;
-  res
-    .status(type)
-    .send({
-      // send same status as error code
-      message: type === 500
-        ? 'Internal server error'
-        : message,
-    });
-  next();
-});
+app.use(errorProcesser);
 
 const server = app.listen(PORT);
 module.exports = server;

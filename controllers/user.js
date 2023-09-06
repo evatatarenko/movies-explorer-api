@@ -4,10 +4,9 @@ const User = require('../models/user');
 const NotFoundError = require('../errors/notFound');
 const ConflictError = require('../errors/conflict');
 const BadRequestError = require('../errors/badRequest');
+const { SALT_PASSWORD_LEN, TOKEN_EXPIRES } = require('../utils/constants');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
-
-const saltPasswordLen = 10;
 
 module.exports.createUser = (req, res, next) => {
   const { name, email, password } = req.body;
@@ -16,7 +15,7 @@ module.exports.createUser = (req, res, next) => {
       if (findUser) {
         throw new ConflictError('Ivalid data');
       }
-      return bcrypt.hash(password, saltPasswordLen);
+      return bcrypt.hash(password, SALT_PASSWORD_LEN);
     }).then((hash) => User.create({
       name,
       email,
@@ -71,6 +70,7 @@ module.exports.login = (req, res, next) => {
       const token = jwt.sign(
         { _id: user._id },
         NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+        { expiresIn: TOKEN_EXPIRES },
       );
       res.send({ token });
     })
